@@ -15,7 +15,7 @@
     <string name="sign_in_description_text">Unesi svoje ime, e-mail adresu i lozinku kako bi se prijavio.</string>
 
     <string name="please_click_back_again_to_exit">Molimo pritisni natrag još jednom za izlaz iz aplikacije.</string>
-    <string name="please_wait">Molimo pričekaj&#8230;</string>
+    <string name="please_wait">Molimo pričekaj...</string>
 
     <string name="nav_my_profile">Moj Profil</string>
     <string name="nav_sign_out">Odjavi Se</string>
@@ -31,7 +31,7 @@
     <string name="no_boards_are_available">Nema dostupnih klubova!!!</string>
 
     <string name="action_add_list">Dodaj Volontersku Akciju</string>
-    <string name="hint_list_name">Naziv</string>
+    <string name="hint_list_name">Adresa Akcije</string>
     <string name="action_add_card">Dodaj Radnju</string>
     <string name="hint_card_name">Naziv Radnje</string>
     <string name="add_list">Dodaj Volontersku Akciju</string>
@@ -47,9 +47,12 @@
     <string name="select_color">Izaberi Boju</string>
     <string name="select_members">Odaberi Korisnike</string>
 
-    <string name="due_date">Datum Akcije</string>
+    <string name="due_date">Datum</string>
     <string name="select_due_date">Odaberi Datum</string>
     <string name="delete_card">Obriši volontersku akciju</string>
+
+    <string name="work_hours">Broj Radnih Sati</string>
+    <string name="select_work_hours">Upisi Broj Radnih Sati</string>
 
     <string name="alert">Upozorenje</string>
     <string name="confirmation_message_to_delete_card">Jesi li siguran da želiš obrisati \'%1$s\'?</string>

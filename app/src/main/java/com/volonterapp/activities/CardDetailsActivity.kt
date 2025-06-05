@@ -36,6 +36,8 @@ class CardDetailsActivity : BaseActivity() {
     private lateinit var mMembersDetailList: ArrayList<User>
     // A global variable for selected due date
     private var mSelectedDueDateMilliSeconds: Long = 0
+    // A global variable for work hours
+    private var mSelectedWorkHours: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,6 +76,17 @@ class CardDetailsActivity : BaseActivity() {
         tv_select_due_date.setOnClickListener {
 
             showDataPicker()
+        }
+
+        mSelectedWorkHours = mBoardDetails.taskList[mTaskListPosition].cards[mCardPosition].workHours
+        if (mSelectedWorkHours > 0) {
+            tv_select_work_hours.text = "$mSelectedWorkHours sati"
+        } else {
+            tv_select_work_hours.text = "Odaberi broj sati"
+        }
+
+        tv_select_work_hours.setOnClickListener {
+            showWorkHoursInputDialog()
         }
 
         btn_update_card_details.setOnClickListener {
@@ -160,7 +173,8 @@ class CardDetailsActivity : BaseActivity() {
             mBoardDetails.taskList[mTaskListPosition].cards[mCardPosition].createdBy,
             mBoardDetails.taskList[mTaskListPosition].cards[mCardPosition].assignedTo,
             mSelectedColor,
-            mSelectedDueDateMilliSeconds
+            mSelectedDueDateMilliSeconds,
+            mSelectedWorkHours
         )
 
         val taskList: ArrayList<Task> = mBoardDetails.taskList
@@ -448,5 +462,56 @@ class CardDetailsActivity : BaseActivity() {
             day
         )
         dpd.show() // It is used to show the datePicker Dialog.
+    }
+    private fun showWorkHoursInputDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Unesite broj sati")
+
+        // Create EditText for input
+        val input = android.widget.EditText(this)
+        input.inputType = android.text.InputType.TYPE_CLASS_NUMBER
+        input.hint = "Broj sati"
+
+        // Set current value if exists
+        if (mSelectedWorkHours > 0) {
+            input.setText(mSelectedWorkHours.toString())
+            input.setSelection(input.text.length)
+        }
+
+        builder.setView(input)
+
+        // Set up buttons
+        builder.setPositiveButton("OK") { dialog, _ ->
+            val inputText = input.text.toString()
+            if (inputText.isNotEmpty()) {
+                val hours = inputText.toIntOrNull()
+                if (hours != null && hours > -1 && hours <= 8) {
+                    mSelectedWorkHours = hours
+                    if (hours == 1){
+                        tv_select_work_hours.text = "$mSelectedWorkHours sat"
+                    }
+                    else if (hours > 1 && hours < 5){
+                        tv_select_work_hours.text = "$mSelectedWorkHours sata"
+                    }
+                    else{
+                        tv_select_work_hours.text = "$mSelectedWorkHours sati"
+                    }
+                    dialog.dismiss()
+                } else {
+                    Toast.makeText(this, "Molimo unesite valjani broj sati (0-8)", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                mSelectedWorkHours = 0
+                tv_select_work_hours.text = "Odaberi broj sati"
+                dialog.dismiss()
+            }
+        }
+
+        builder.setNegativeButton("Otkazano") { dialog, _ ->
+            dialog.cancel()
+        }
+
+        val dialog = builder.create()
+        dialog.show()
     }
 }

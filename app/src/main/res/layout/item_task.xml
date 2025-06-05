@@ -104,15 +104,6 @@
                     tools:text="Title" />
 
                 <ImageButton
-                    android:id="@+id/ib_edit_list_name"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:contentDescription="@string/image_contentDescription"
-                    android:padding="@dimen/task_item_image_buttons_padding"
-                    android:src="@drawable/ic_edit" />
-
-                <ImageButton
                     android:id="@+id/ib_delete_list"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

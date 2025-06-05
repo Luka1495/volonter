@@ -158,8 +158,8 @@ class MyProfileActivity : BaseActivity() {
 
         et_name.setText(user.name)
         et_email.setText(user.email)
-        if (user.mobile != 0L) {
-            et_mobile.setText(user.mobile.toString())
+        if (user.mobile.isNotEmpty()) {
+            et_mobile.setText(user.mobile)
         }
     }
 
@@ -228,7 +228,7 @@ class MyProfileActivity : BaseActivity() {
         }
 
         if (et_mobile.text.toString() != mUserDetails.mobile.toString()) {
-            userHashMap[Constants.MOBILE] = et_mobile.text.toString().toLong()
+            userHashMap[Constants.MOBILE] = et_mobile.text.toString()
         }
 
         // Update the data in the database.
