@@ -94,6 +94,13 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
                     MY_PROFILE_REQUEST_CODE
                 )
             }
+            R.id.nav_statistics -> {
+
+                startActivityForResult(
+                    Intent(this@MainActivity, RankingActivity::class.java),
+                    MY_PROFILE_REQUEST_CODE
+                )
+            }
 
             R.id.nav_sign_out -> {
                 // Here sign outs the user from firebase in this device.

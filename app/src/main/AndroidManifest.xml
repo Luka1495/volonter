@@ -87,6 +87,11 @@
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar" />
 
+        <activity
+            android:name="com.volonterapp.activities.RankingActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+
         <service
             android:name="com.volonterapp.fcm.MyFirebaseMessagingService"
             android:exported="false">
