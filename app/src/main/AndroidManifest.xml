@@ -34,6 +34,7 @@
 
         <activity
             android:name="com.volonterapp.activities.SplashActivity"
+            android:exported="true"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
@@ -88,7 +89,7 @@
             android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
-            android:name="com.volonterapp.activities.RankingActivity"
+            android:name="com.volonterapp.activities.StatisticsActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar" />
 

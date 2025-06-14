@@ -97,7 +97,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             R.id.nav_statistics -> {
 
                 startActivityForResult(
-                    Intent(this@MainActivity, RankingActivity::class.java),
+                    Intent(this@MainActivity, StatisticsActivity::class.java),
                     MY_PROFILE_REQUEST_CODE
                 )
             }

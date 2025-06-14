@@ -155,7 +155,7 @@ class CardDetailsActivity : BaseActivity() {
             mCardPosition = intent.getIntExtra(Constants.CARD_LIST_ITEM_POSITION, -1)
         }
         if (intent.hasExtra(Constants.BOARD_DETAIL)) {
-            mBoardDetails = intent.getParcelableExtra(Constants.BOARD_DETAIL) as Board
+            mBoardDetails = intent.getParcelableExtra<Board>(Constants.BOARD_DETAIL) ?: Board()
         }
 
         if (intent.hasExtra(Constants.BOARD_MEMBERS_LIST)) {
