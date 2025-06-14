@@ -34,7 +34,7 @@
     <string name="action_add_list">Dodaj Volontersku Akciju</string>
     <string name="hint_list_name">Adresa Akcije</string>
     <string name="action_add_card">Dodaj Radnju</string>
-    <string name="hint_card_name">Naziv Radnje</string>
+    <string name="hint_card_name">Opis Radnje</string>
     <string name="add_list">Dodaj Volontersku Akciju</string>
 
     <string name="members">Korisnici</string>
@@ -47,6 +47,9 @@
     <string name="label_color">Boja Oznake</string>
     <string name="select_color">Izaberi Boju</string>
     <string name="select_members">Odaberi Korisnike</string>
+
+    <string name="typeofwork">Izaberi Vrstu Posla</string>
+    <string name="select_typeofwork">Odaberi Vrstu Posla</string>
 
     <string name="due_date">Datum</string>
     <string name="select_due_date">Odaberi Datum</string>

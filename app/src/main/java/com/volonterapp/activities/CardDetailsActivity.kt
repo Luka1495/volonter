@@ -32,6 +32,8 @@ class CardDetailsActivity : BaseActivity() {
     private var mCardPosition: Int = -1
     // A global variable for selected label color
     private var mSelectedColor: String = ""
+    // A global variable for type of work
+    private var mTypeOfWork: String = ""
     // A global variable for Assigned Members List.
     private lateinit var mMembersDetailList: ArrayList<User>
     // A global variable for selected due date
@@ -63,6 +65,16 @@ class CardDetailsActivity : BaseActivity() {
 
         tv_select_members.setOnClickListener {
             membersListDialog()
+        }
+        mTypeOfWork = mBoardDetails.taskList[mTaskListPosition].cards[mCardPosition].typeOfWork
+        if (mTypeOfWork.isNotEmpty()) {
+            tv_select_typeofwork.text = mTypeOfWork
+        } else {
+            tv_select_typeofwork.text = "Odaberi kategoriju rada"
+        }
+
+        tv_select_typeofwork.setOnClickListener {
+            showTypeOfWorkDialog()
         }
 
         mSelectedDueDateMilliSeconds =
@@ -174,7 +186,8 @@ class CardDetailsActivity : BaseActivity() {
             mBoardDetails.taskList[mTaskListPosition].cards[mCardPosition].assignedTo,
             mSelectedColor,
             mSelectedDueDateMilliSeconds,
-            mSelectedWorkHours
+            mSelectedWorkHours,
+            mTypeOfWork
         )
 
         val taskList: ArrayList<Task> = mBoardDetails.taskList
@@ -509,6 +522,44 @@ class CardDetailsActivity : BaseActivity() {
 
         builder.setNegativeButton("Otkazano") { dialog, _ ->
             dialog.cancel()
+        }
+
+        val dialog = builder.create()
+        dialog.show()
+    }
+    private fun showTypeOfWorkDialog() {
+        val categories = arrayOf(
+            "Čišćenje i očuvanje okoliša",
+            "Fizički rad i pomoć u zajednici",
+            "Umjetnički i kreativni rad",
+            "Druženje i pomoć starijima",
+            "Rad s djecom i mladima",
+            "Ostalo"
+        )
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Odaberite kategoriju rada")
+
+        // Pronađi trenutno odabranu kategoriju
+        var checkedItem = -1
+        if (mTypeOfWork.isNotEmpty()) {
+            checkedItem = categories.indexOf(mTypeOfWork)
+        }
+
+        builder.setSingleChoiceItems(categories, checkedItem) { dialog, which ->
+            mTypeOfWork = categories[which]
+            tv_select_typeofwork.text = mTypeOfWork
+            dialog.dismiss()
+        }
+
+        builder.setNegativeButton("Otkazano") { dialog, _ ->
+            dialog.cancel()
+        }
+
+        builder.setNeutralButton("Ukloni") { dialog, _ ->
+            mTypeOfWork = ""
+            tv_select_typeofwork.text = "Odaberi kategoriju rada"
+            dialog.dismiss()
         }
 
         val dialog = builder.create()
