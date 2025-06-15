@@ -41,13 +41,15 @@
 
                 <Button
                     android:id="@+id/btnUserStats"
+                    style="@style/Widget.MaterialComponents.Button"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
                     android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    android:text="Moja statistika"
-                    android:textSize="16sp"
-                    style="@style/Widget.MaterialComponents.Button" />
+                    android:text="Moji Podaci"
+                    android:textColor="@color/dark_gray"
+                    android:textSize="14sp"
+                    android:background="@color/light_gray" />
 
                 <Button
                     android:id="@+id/btnOrgStats"
@@ -56,7 +58,9 @@
                     android:layout_weight="1"
                     android:layout_marginHorizontal="4dp"
                     android:text="Organizacija"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
+                    android:textColor="@color/dark_gray"
+                    android:background="@color/light_gray"
                     style="@style/Widget.MaterialComponents.Button" />
 
                 <Button
@@ -64,14 +68,17 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="4dp"
                     android:text="Sustav"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
+                    android:textColor="@color/dark_gray"
+                    android:background="@color/light_gray"
                     style="@style/Widget.MaterialComponents.Button" />
 
             </LinearLayout>
 
             <!-- Stats Cards Container -->
+
             <LinearLayout
                 android:id="@+id/statsContainer"
                 android:layout_width="match_parent"

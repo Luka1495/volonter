@@ -26,11 +26,16 @@ class IntegerValueFormatter : ValueFormatter() {
         return value.toInt().toString()
     }
 }
+
 class StatisticsActivity : AppCompatActivity() {
 
     private lateinit var barChart: BarChart
     private lateinit var pieChart: PieChart
     private lateinit var statsContainer: LinearLayout
+    private lateinit var mainContainer: LinearLayout
+    private lateinit var barChartTitle: TextView
+    private lateinit var pieChartTitle: TextView
+    private var orgSelectorContainer: LinearLayout? = null
 
     private var selectedView = "korisnik"
     private var selectedOrgId = "org1"
@@ -152,6 +157,7 @@ class StatisticsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_statistics)
 
         initViews()
+        createChartTitles()
         setupNavigation()
         renderUserAnalytics()
     }
@@ -160,6 +166,59 @@ class StatisticsActivity : AppCompatActivity() {
         barChart = findViewById(R.id.barChart)
         pieChart = findViewById(R.id.pieChart)
         statsContainer = findViewById(R.id.statsContainer)
+        mainContainer = statsContainer.parent as LinearLayout
+    }
+
+    private fun createChartTitles() {
+        // Bar chart naslov
+        barChartTitle = TextView(this).apply {
+            textSize = 16f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(Color.BLACK)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 24, 0, 8)
+            }
+        }
+
+        // Pie chart naslov
+        pieChartTitle = TextView(this).apply {
+            textSize = 16f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(Color.BLACK)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 24, 0, 8)
+            }
+        }
+
+        // Pronađite pozicije grafova u layoutu
+        var barChartIndex = -1
+        var pieChartIndex = -1
+
+        for (i in 0 until mainContainer.childCount) {
+            val child = mainContainer.getChildAt(i)
+            if (child is CardView) {
+                if (barChartIndex == -1) {
+                    barChartIndex = i
+                } else {
+                    pieChartIndex = i
+                    break
+                }
+            }
+        }
+
+        // Dodajte naslove prije grafova
+        if (barChartIndex != -1) {
+            mainContainer.addView(barChartTitle, barChartIndex)
+        }
+        if (pieChartIndex != -1) {
+            mainContainer.addView(pieChartTitle, pieChartIndex + 1) // +1 jer je barChartTitle dodao jedan element
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.N)
@@ -188,10 +247,10 @@ class StatisticsActivity : AppCompatActivity() {
         val btnOrg = findViewById<Button>(R.id.btnOrgStats)
         val btnSystem = findViewById<Button>(R.id.btnSystemStats)
 
-        // Reset svih dugmića
+        // Reset svih dugmića - postavi ih na neaktivno stanje
         listOf(btnUser, btnOrg, btnSystem).forEach { btn ->
-            btn.setBackgroundColor(ContextCompat.getColor(this, android.R.color.transparent))
-            btn.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
+            btn.setBackgroundColor(ContextCompat.getColor(this, R.color.light_gray))
+            btn.setTextColor(ContextCompat.getColor(this, R.color.dark_gray))
         }
 
         // Označiti aktivno dugme
@@ -211,9 +270,103 @@ class StatisticsActivity : AppCompatActivity() {
         }
     }
 
+    private fun createOrgSelector() {
+        // Uklonite postojeći selector ako postoji
+        orgSelectorContainer?.let { container ->
+            mainContainer.removeView(container)
+        }
+
+        // Kreirajte novi container
+        orgSelectorContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 0, 0, 16)
+            }
+        }
+
+        // Dodajte gumbove za svaku organizaciju
+        orgAnalytics.entries.forEachIndexed { index, (orgId, org) ->
+            val button = Button(this).apply {
+                text = org.name
+                textSize = 12f
+                isAllCaps = false
+                layoutParams = LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+                ).apply {
+                    if (index > 0) setMargins(8, 0, 0, 0)
+                }
+
+                // Postavi OutlinedButton stil
+                setBackgroundResource(android.R.drawable.btn_default)
+
+                setOnClickListener {
+                    selectedOrgId = orgId
+                    updateOrgSelector()
+                    renderOrgAnalytics()
+                }
+            }
+            orgSelectorContainer?.addView(button)
+        }
+
+        // Dodajte container u glavni layout (nakon statsContainer)
+        val statsIndex = mainContainer.indexOfChild(statsContainer)
+        orgSelectorContainer?.let { container ->
+            mainContainer.addView(container, statsIndex + 1)
+        }
+
+        updateOrgSelector()
+    }
+
+    private fun updateOrgSelector() {
+        orgSelectorContainer?.let { container ->
+            for (i in 0 until container.childCount) {
+                val button = container.getChildAt(i) as Button
+                val orgId = orgAnalytics.keys.elementAt(i)
+
+                if (orgId == selectedOrgId) {
+                    // Aktivni gumb
+                    button.setBackgroundColor(ContextCompat.getColor(this, R.color.green_600))
+                    button.setTextColor(Color.WHITE)
+                } else {
+                    // Neaktivni gumb - sada vidljiv
+                    button.setBackgroundColor(ContextCompat.getColor(this, R.color.light_gray))
+                    button.setTextColor(ContextCompat.getColor(this, R.color.dark_gray))
+                }
+            }
+        }
+    }
+
+    private fun updateChartTitles(viewType: String) {
+        when (viewType) {
+            "korisnik" -> {
+                barChartTitle.text = "Broj sati po organizaciji"
+                pieChartTitle.text = "Broj sati po kategoriji rada"
+            }
+            "organizacija" -> {
+                barChartTitle.text = "Broj sati po kategoriji rada"
+                pieChartTitle.text = "Broj volontera po kategoriji rada"
+            }
+            "sustav" -> {
+                barChartTitle.text = "Broj sati po kategoriji rada (sustav)"
+                pieChartTitle.text = "Broj volontera po kategoriji rada (sustav)"
+            }
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.N)
     private fun renderUserAnalytics() {
         val user = userAnalytics["user1"] ?: return
+
+        // Uklonite org selector ako postoji
+        orgSelectorContainer?.let { container ->
+            mainContainer.removeView(container)
+            orgSelectorContainer = null
+        }
 
         // Kreiraj statistike kartice
         createStatsCards(listOf(
@@ -227,6 +380,8 @@ class StatisticsActivity : AppCompatActivity() {
 
         // Postavite pie chart
         setupPieChart(user)
+
+        updateChartTitles("korisnik")
     }
 
     private fun renderOrgAnalytics() {
@@ -238,11 +393,23 @@ class StatisticsActivity : AppCompatActivity() {
             StatCard("Kategorija", org.categories.size.toString(), R.color.purple_600)
         ))
 
+        // Dodajte org selector ako ne postoji
+        if (orgSelectorContainer == null) {
+            createOrgSelector()
+        }
+
         setupOrgBarChart(org)
         setupOrgPieChart(org)
+        updateChartTitles("organizacija")
     }
 
     private fun renderSystemAnalytics() {
+        // Uklonite org selector ako postoji
+        orgSelectorContainer?.let { container ->
+            mainContainer.removeView(container)
+            orgSelectorContainer = null
+        }
+
         createStatsCards(listOf(
             StatCard("Ukupno sati", systemAnalytics.totalHours.toString(), R.color.purple_600),
             StatCard("Volontera", systemAnalytics.totalVolunteers.toString(), R.color.blue_600),
@@ -251,6 +418,7 @@ class StatisticsActivity : AppCompatActivity() {
 
         setupSystemBarChart()
         setupSystemPieChart()
+        updateChartTitles("sustav")
     }
 
     private fun getUniqueCategoriesCount(user: UserAnalytics): Int {
@@ -269,6 +437,7 @@ class StatisticsActivity : AppCompatActivity() {
         val dataSet = BarDataSet(entries, "Sati rada")
         dataSet.color = ContextCompat.getColor(this, R.color.blue_600)
         dataSet.valueTextSize = 12f
+        dataSet.valueFormatter = IntegerValueFormatter()
 
         val data = BarData(dataSet)
         barChart.data = data
@@ -278,14 +447,22 @@ class StatisticsActivity : AppCompatActivity() {
         barChart.legend.isEnabled = false
         barChart.animateY(1000)
 
-        // X-axis labeli
+        // X-axis labeli - skrati nazive organizacija
         val xAxis = barChart.xAxis
-        xAxis.valueFormatter = IndexAxisValueFormatter(
-            user.organizations.map { it.name }
-        )
+        val shortNames = user.organizations.map {
+            if (it.name.length > 10) it.name.take(8) + "..." else it.name
+        }
+        xAxis.valueFormatter = IndexAxisValueFormatter(shortNames)
         xAxis.position = XAxis.XAxisPosition.BOTTOM
         xAxis.granularity = 1f
         xAxis.setDrawGridLines(false)
+        xAxis.textSize = 10f
+        xAxis.labelRotationAngle = -45f
+        xAxis.setLabelCount(user.organizations.size, false)
+
+        barChart.setFitBars(true)
+        barChart.setScaleEnabled(true)
+        barChart.isDragEnabled = true
 
         barChart.invalidate()
     }
@@ -314,17 +491,16 @@ class StatisticsActivity : AppCompatActivity() {
             Color.parseColor("#6b7280")
         )
 
-        // Ukloni .0 s brojeva
         dataSet.valueFormatter = IntegerValueFormatter()
 
         val data = PieData(dataSet)
-        data.setValueTextSize(12f)
+        data.setValueTextSize(14f)
         data.setValueTextColor(Color.WHITE)
 
         pieChart.data = data
         pieChart.description.isEnabled = false
+        pieChart.setDrawEntryLabels(false)
 
-        // Konfiguracija legende
         val legend = pieChart.legend
         legend.isEnabled = true
         legend.verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
@@ -352,21 +528,29 @@ class StatisticsActivity : AppCompatActivity() {
         val dataSet = BarDataSet(entries, "Sati rada")
         dataSet.color = ContextCompat.getColor(this, R.color.green_600)
         dataSet.valueTextSize = 12f
+        dataSet.valueFormatter = IntegerValueFormatter()
 
         val barData = BarData(dataSet)
         barChart.data = barData
 
         val xAxis = barChart.xAxis
-        xAxis.valueFormatter = IndexAxisValueFormatter(
-            org.categories.keys.toList()
-        )
+        val shortCategories = org.categories.keys.map {
+            if (it.length > 15) it.take(12) + "..." else it
+        }
+        xAxis.valueFormatter = IndexAxisValueFormatter(shortCategories)
         xAxis.position = XAxis.XAxisPosition.BOTTOM
         xAxis.granularity = 1f
         xAxis.setDrawGridLines(false)
+        xAxis.textSize = 9f
+        xAxis.labelRotationAngle = -45f
+        xAxis.setLabelCount(org.categories.size, false)
 
         barChart.description.isEnabled = false
         barChart.legend.isEnabled = false
         barChart.animateY(1000)
+        barChart.setFitBars(true)
+        barChart.setScaleEnabled(true)
+        barChart.isDragEnabled = true
         barChart.invalidate()
     }
 
@@ -380,13 +564,13 @@ class StatisticsActivity : AppCompatActivity() {
         dataSet.valueFormatter = IntegerValueFormatter()
 
         val data = PieData(dataSet)
-        data.setValueTextSize(12f)
+        data.setValueTextSize(14f)
         data.setValueTextColor(Color.WHITE)
 
         pieChart.data = data
         pieChart.description.isEnabled = false
+        pieChart.setDrawEntryLabels(false)
 
-        // Konfiguracija legende
         val legend = pieChart.legend
         legend.isEnabled = true
         legend.verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
@@ -414,21 +598,29 @@ class StatisticsActivity : AppCompatActivity() {
         val dataSet = BarDataSet(entries, "Sati rada")
         dataSet.color = ContextCompat.getColor(this, R.color.purple_600)
         dataSet.valueTextSize = 12f
+        dataSet.valueFormatter = IntegerValueFormatter()
 
         val barData = BarData(dataSet)
         barChart.data = barData
 
         val xAxis = barChart.xAxis
-        xAxis.valueFormatter = IndexAxisValueFormatter(
-            systemAnalytics.categories.keys.toList()
-        )
+        val shortCategories = systemAnalytics.categories.keys.map {
+            if (it.length > 15) it.take(12) + "..." else it
+        }
+        xAxis.valueFormatter = IndexAxisValueFormatter(shortCategories)
         xAxis.position = XAxis.XAxisPosition.BOTTOM
         xAxis.granularity = 1f
         xAxis.setDrawGridLines(false)
+        xAxis.textSize = 9f
+        xAxis.labelRotationAngle = -45f
+        xAxis.setLabelCount(systemAnalytics.categories.size, false)
 
         barChart.description.isEnabled = false
         barChart.legend.isEnabled = false
         barChart.animateY(1000)
+        barChart.setFitBars(true)
+        barChart.setScaleEnabled(true)
+        barChart.isDragEnabled = true
         barChart.invalidate()
     }
 
@@ -449,13 +641,13 @@ class StatisticsActivity : AppCompatActivity() {
         dataSet.valueFormatter = IntegerValueFormatter()
 
         val data = PieData(dataSet)
-        data.setValueTextSize(12f)
+        data.setValueTextSize(14f)
         data.setValueTextColor(Color.WHITE)
 
         pieChart.data = data
         pieChart.description.isEnabled = false
+        pieChart.setDrawEntryLabels(false)
 
-        // Konfiguracija legende
         val legend = pieChart.legend
         legend.isEnabled = true
         legend.verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
