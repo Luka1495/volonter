@@ -19,6 +19,7 @@ import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.utils.ColorTemplate
 import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.formatter.ValueFormatter
+import com.google.firebase.firestore.FirebaseFirestore
 import com.volonterapp.R
 
 class IntegerValueFormatter : ValueFormatter() {
@@ -26,6 +27,45 @@ class IntegerValueFormatter : ValueFormatter() {
         return value.toInt().toString()
     }
 }
+
+// Firebase data models
+data class FirebaseUser(
+    val id: String = "",
+    val name: String = "",
+    val email: String = "",
+    val mobile: String = "",
+    val image: String = "",
+    val fcmToken: String = "",
+    val selected: Boolean = false,
+    val stability: Int = 0
+)
+
+data class FirebaseCard(
+    val name: String = "",
+    val assignedTo: List<String> = emptyList(),
+    val createdBy: String = "",
+    val dueDate: Long = 0,
+    val labelColor: String = "",
+    val typeOfWork: String = "",
+    val workHours: Int = 0,
+    val stability: Int = 0
+)
+
+data class FirebaseTaskList(
+    val cards: List<FirebaseCard> = emptyList(),
+    val createdBy: String = "",
+    val stability: Int = 0
+)
+
+data class FirebaseBoard(
+    val name: String = "",
+    val assignedTo: List<String> = emptyList(),
+    val createdBy: String = "",
+    val documentId: String = "",
+    val image: String = "",
+    val taskList: List<FirebaseTaskList> = emptyList(),
+    val stability: Int = 0
+)
 
 class StatisticsActivity : AppCompatActivity() {
 
@@ -38,9 +78,18 @@ class StatisticsActivity : AppCompatActivity() {
     private var orgSelectorContainer: LinearLayout? = null
 
     private var selectedView = "korisnik"
-    private var selectedOrgId = "org1"
+    private var selectedOrgId = ""
 
-    // Data classes
+    private val firestore = FirebaseFirestore.getInstance()
+
+    // Trenutni korisnik ID - trebate postaviti ovo na temelju prijavljenog korisnika
+    private val currentUserId = "tqDBZJXz0fctheVt1FvpSXWnjgC2" // Luka's ID
+
+    // Cache za podatke
+    private var allUsers = listOf<FirebaseUser>()
+    private var allBoards = listOf<FirebaseBoard>()
+
+    // Analytics data classes (zadržane postojeće)
     data class UserAnalytics(
         val name: String,
         val totalHours: Int,
@@ -84,73 +133,6 @@ class StatisticsActivity : AppCompatActivity() {
         val colorRes: Int
     )
 
-    // Simulirani podaci
-    private val userAnalytics = mapOf(
-        "user1" to UserAnalytics(
-            name = "Ana Marić",
-            totalHours = 85,
-            organizations = listOf(
-                OrganizationData("Zeleni Zagreb", 32, mapOf(
-                    "Čišćenje i očuvanje okoliša" to 25,
-                    "Fizički rad i pomoć u zajednici" to 7
-                )),
-                OrganizationData("Pomoć starijima", 28, mapOf(
-                    "Druženje i pomoć starijima" to 20,
-                    "Fizički rad i pomoć u zajednici" to 8
-                )),
-                OrganizationData("Kreativni centar", 25, mapOf(
-                    "Umjetnički i kreativni rad" to 18,
-                    "Rad s djecom i mladima" to 7
-                ))
-            )
-        )
-    )
-
-    private val orgAnalytics = mapOf(
-        "org1" to OrgAnalytics(
-            name = "Zeleni Zagreb",
-            totalHours = 147,
-            totalVolunteers = 15,
-            categories = mapOf(
-                "Čišćenje i očuvanje okoliša" to CategoryData(98, 12),
-                "Fizički rad i pomoć u zajednici" to CategoryData(35, 8),
-                "Ostalo" to CategoryData(14, 3)
-            )
-        ),
-        "org2" to OrgAnalytics(
-            name = "Pomoć starijima",
-            totalHours = 89,
-            totalVolunteers = 8,
-            categories = mapOf(
-                "Druženje i pomoć starijima" to CategoryData(65, 7),
-                "Fizički rad i pomoć u zajednici" to CategoryData(24, 5)
-            )
-        ),
-        "org3" to OrgAnalytics(
-            name = "Kreativni centar",
-            totalHours = 112,
-            totalVolunteers = 12,
-            categories = mapOf(
-                "Umjetnički i kreativni rad" to CategoryData(68, 9),
-                "Rad s djecom i mladima" to CategoryData(44, 8)
-            )
-        )
-    )
-
-    private val systemAnalytics = SystemAnalytics(
-        totalHours = 348,
-        totalVolunteers = 23,
-        totalOrganizations = 3,
-        categories = mapOf(
-            "Čišćenje i očuvanje okoliša" to SystemCategoryData(98, 12, 1),
-            "Fizički rad i pomoć u zajednici" to SystemCategoryData(59, 13, 2),
-            "Umjetnički i kreativni rad" to SystemCategoryData(68, 9, 1),
-            "Druženje i pomoć starijima" to SystemCategoryData(65, 7, 1),
-            "Rad s djecom i mladima" to SystemCategoryData(44, 8, 1),
-            "Ostalo" to SystemCategoryData(14, 3, 1)
-        )
-    )
-
     @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -159,8 +141,166 @@ class StatisticsActivity : AppCompatActivity() {
         initViews()
         createChartTitles()
         setupNavigation()
-        renderUserAnalytics()
+
+        // Učitaj podatke iz Firebase
+        loadFirebaseData()
     }
+
+    @RequiresApi(Build.VERSION_CODES.N)
+    private fun loadFirebaseData() {
+        // Učitaj korisnike
+        firestore.collection("users")
+            .get()
+            .addOnSuccessListener { userDocuments ->
+                allUsers = userDocuments.map { doc ->
+                    doc.toObject(FirebaseUser::class.java).copy(id = doc.id)
+                }
+
+                // Učitaj boardove
+                firestore.collection("boards")
+                    .get()
+                    .addOnSuccessListener { boardDocuments ->
+                        allBoards = boardDocuments.map { doc ->
+                            doc.toObject(FirebaseBoard::class.java).copy(documentId = doc.id)
+                        }
+
+                        // Sada možemo renderirati podatke
+                        renderUserAnalytics()
+                    }
+                    .addOnFailureListener { e ->
+                        // Handle error
+                        e.printStackTrace()
+                    }
+            }
+            .addOnFailureListener { e ->
+                // Handle error
+                e.printStackTrace()
+            }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.N)
+    private fun generateUserAnalytics(userId: String): UserAnalytics? {
+        val user = allUsers.find { it.id == userId } ?: return null
+
+        val organizations = mutableListOf<OrganizationData>()
+
+        // Prođi kroz sve boardove gdje je korisnik dodijeljen
+        allBoards.filter { board ->
+            board.assignedTo.contains(userId)
+        }.forEach { board ->
+            var totalBoardHours = 0
+            val categoryHours = mutableMapOf<String, Int>()
+
+            // Prođi kroz sve task liste i kartice
+            board.taskList.forEach { taskList ->
+                taskList.cards.filter { card ->
+                    card.assignedTo.contains(userId)
+                }.forEach { card ->
+                    totalBoardHours += card.workHours
+
+                    val category = if (card.typeOfWork.isNotEmpty()) {
+                        card.typeOfWork
+                    } else {
+                        "Ostalo"
+                    }
+
+                    categoryHours[category] = categoryHours.getOrDefault(category, 0) + card.workHours
+                }
+            }
+
+            if (totalBoardHours > 0) {
+                organizations.add(OrganizationData(
+                    name = board.name,
+                    hours = totalBoardHours,
+                    categories = categoryHours
+                ))
+            }
+        }
+
+        val totalHours = organizations.sumOf { it.hours }
+
+        return UserAnalytics(
+            name = user.name,
+            totalHours = totalHours,
+            organizations = organizations
+        )
+    }
+
+    private fun generateOrgAnalytics(boardId: String): OrgAnalytics? {
+        val board = allBoards.find { it.documentId == boardId } ?: return null
+
+        val categories = mutableMapOf<String, CategoryData>()
+        var totalHours = 0
+        val uniqueVolunteers = mutableSetOf<String>()
+
+        board.taskList.forEach { taskList ->
+            taskList.cards.forEach { card ->
+                val category = if (card.typeOfWork.isNotEmpty()) {
+                    card.typeOfWork
+                } else {
+                    "Ostalo"
+                }
+
+                totalHours += card.workHours * card.assignedTo.size
+                uniqueVolunteers.addAll(card.assignedTo)
+
+                val existingData = categories[category] ?: CategoryData(0, 0)
+                categories[category] = CategoryData(
+                    hours = existingData.hours + (card.workHours * card.assignedTo.size),
+                    volunteers = card.assignedTo.size
+                )
+            }
+        }
+
+        return OrgAnalytics(
+            name = board.name,
+            totalHours = totalHours,
+            totalVolunteers = uniqueVolunteers.size,
+            categories = categories
+        )
+    }
+
+    private fun generateSystemAnalytics(): SystemAnalytics {
+        val categories = mutableMapOf<String, SystemCategoryData>()
+        var totalHours = 0
+        val uniqueVolunteers = mutableSetOf<String>()
+        val organizationsPerCategory = mutableMapOf<String, MutableSet<String>>()
+
+        allBoards.forEach { board ->
+            board.taskList.forEach { taskList ->
+                taskList.cards.forEach { card ->
+                    val category = if (card.typeOfWork.isNotEmpty()) {
+                        card.typeOfWork
+                    } else {
+                        "Ostalo"
+                    }
+
+                    val cardTotalHours = card.workHours * card.assignedTo.size
+                    totalHours += cardTotalHours
+                    uniqueVolunteers.addAll(card.assignedTo)
+
+                    // Prati organizacije po kategoriji
+                    organizationsPerCategory.getOrPut(category) { mutableSetOf() }.add(board.documentId)
+
+                    val existingData = categories[category] ?: SystemCategoryData(0, 0, 0)
+                    categories[category] = SystemCategoryData(
+                        hours = existingData.hours + cardTotalHours,
+                        volunteers = card.assignedTo.size,
+                        organizations = organizationsPerCategory[category]?.size ?: 0
+                    )
+                }
+            }
+        }
+
+        return SystemAnalytics(
+            totalHours = totalHours,
+            totalVolunteers = uniqueVolunteers.size,
+            totalOrganizations = allBoards.size,
+            categories = categories
+        )
+    }
+
+    // Ostatak koda ostaje isti, samo zamenite pozivis simuliranih podataka...
 
     private fun initViews() {
         barChart = findViewById(R.id.barChart)
@@ -287,10 +427,14 @@ class StatisticsActivity : AppCompatActivity() {
             }
         }
 
-        // Dodajte gumbove za svaku organizaciju
-        orgAnalytics.entries.forEachIndexed { index, (orgId, org) ->
+        // Dodajte gumbove za organizacije gdje je korisnik dodijeljen
+        val userBoards = allBoards.filter { board ->
+            board.assignedTo.contains(currentUserId)
+        }
+
+        userBoards.forEachIndexed { index, board ->
             val button = Button(this).apply {
-                text = org.name
+                text = board.name
                 textSize = 12f
                 isAllCaps = false
                 layoutParams = LinearLayout.LayoutParams(
@@ -301,11 +445,12 @@ class StatisticsActivity : AppCompatActivity() {
                     if (index > 0) setMargins(8, 0, 0, 0)
                 }
 
-                // Postavi OutlinedButton stil
-                setBackgroundResource(android.R.drawable.btn_default)
+                // Postavi početno stanje - neaktivno
+                setBackgroundColor(ContextCompat.getColor(this@StatisticsActivity, R.color.light_gray))
+                setTextColor(ContextCompat.getColor(this@StatisticsActivity, R.color.dark_gray))
 
                 setOnClickListener {
-                    selectedOrgId = orgId
+                    selectedOrgId = board.documentId
                     updateOrgSelector()
                     renderOrgAnalytics()
                 }
@@ -319,16 +464,25 @@ class StatisticsActivity : AppCompatActivity() {
             mainContainer.addView(container, statsIndex + 1)
         }
 
+        // Postavi prvi board kao selektiran ako nijedan nije postavljen
+        if (selectedOrgId.isEmpty() && userBoards.isNotEmpty()) {
+            selectedOrgId = userBoards.first().documentId
+        }
+
         updateOrgSelector()
     }
 
     private fun updateOrgSelector() {
         orgSelectorContainer?.let { container ->
+            val userBoards = allBoards.filter { board ->
+                board.assignedTo.contains(currentUserId)
+            }
+
             for (i in 0 until container.childCount) {
                 val button = container.getChildAt(i) as Button
-                val orgId = orgAnalytics.keys.elementAt(i)
+                val boardId = userBoards[i].documentId
 
-                if (orgId == selectedOrgId) {
+                if (boardId == selectedOrgId) {
                     // Aktivni gumb
                     button.setBackgroundColor(ContextCompat.getColor(this, R.color.green_600))
                     button.setTextColor(Color.WHITE)
@@ -360,7 +514,11 @@ class StatisticsActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.N)
     private fun renderUserAnalytics() {
-        val user = userAnalytics["user1"] ?: return
+        val userAnalytics = generateUserAnalytics(currentUserId)
+        if (userAnalytics == null) {
+            // Nema podataka za korisnika
+            return
+        }
 
         // Uklonite org selector ako postoji
         orgSelectorContainer?.let { container ->
@@ -370,36 +528,75 @@ class StatisticsActivity : AppCompatActivity() {
 
         // Kreiraj statistike kartice
         createStatsCards(listOf(
-            StatCard("Ukupno sati", user.totalHours.toString(), R.color.blue_600),
-            StatCard("Organizacija", user.organizations.size.toString(), R.color.green_600),
-            StatCard("Kategorija rada", getUniqueCategoriesCount(user).toString(), R.color.purple_600)
+            StatCard("Ukupno sati", userAnalytics.totalHours.toString(), R.color.blue_600),
+            StatCard("Organizacija", userAnalytics.organizations.size.toString(), R.color.green_600),
+            StatCard("Kategorija rada", getUniqueCategoriesCount(userAnalytics).toString(), R.color.purple_600)
         ))
 
         // Postavite bar chart
-        setupBarChart(user)
+        setupBarChart(userAnalytics)
 
         // Postavite pie chart
-        setupPieChart(user)
+        setupPieChart(userAnalytics)
 
         updateChartTitles("korisnik")
     }
 
+    @RequiresApi(Build.VERSION_CODES.N)
     private fun renderOrgAnalytics() {
-        val org = orgAnalytics[selectedOrgId] ?: return
-
-        createStatsCards(listOf(
-            StatCard("Ukupno sati", org.totalHours.toString(), R.color.green_600),
-            StatCard("Volontera", org.totalVolunteers.toString(), R.color.blue_600),
-            StatCard("Kategorija", org.categories.size.toString(), R.color.purple_600)
-        ))
-
-        // Dodajte org selector ako ne postoji
+        // Prvo stvori org selector ako ne postoji
         if (orgSelectorContainer == null) {
             createOrgSelector()
         }
 
-        setupOrgBarChart(org)
-        setupOrgPieChart(org)
+        // Ako selectedOrgId još uvijek nije postavljen, postavi prvi dostupan
+        if (selectedOrgId.isEmpty()) {
+            val userBoards = allBoards.filter { board ->
+                board.assignedTo.contains(currentUserId)
+            }
+            if (userBoards.isNotEmpty()) {
+                selectedOrgId = userBoards.first().documentId
+                updateOrgSelector() // Ažuriraj vizualnu oznaku
+            } else {
+                // Nema organizacija za trenutnog korisnika
+                createStatsCards(listOf(
+                    StatCard("Ukupno sati", "0", R.color.green_600),
+                    StatCard("Volontera", "0", R.color.blue_600),
+                    StatCard("Kategorija", "0", R.color.purple_600)
+                ))
+
+                // Očisti grafove
+                barChart.clear()
+                pieChart.clear()
+                updateChartTitles("organizacija")
+                return
+            }
+        }
+
+        val orgAnalytics = generateOrgAnalytics(selectedOrgId)
+        if (orgAnalytics == null) {
+            // Ova organizacija ne postoji ili nema podataka
+            createStatsCards(listOf(
+                StatCard("Ukupno sati", "0", R.color.green_600),
+                StatCard("Volontera", "0", R.color.blue_600),
+                StatCard("Kategorija", "0", R.color.purple_600)
+            ))
+
+            // Očisti grafove
+            barChart.clear()
+            pieChart.clear()
+            updateChartTitles("organizacija")
+            return
+        }
+
+        createStatsCards(listOf(
+            StatCard("Ukupno sati", orgAnalytics.totalHours.toString(), R.color.green_600),
+            StatCard("Volontera", orgAnalytics.totalVolunteers.toString(), R.color.blue_600),
+            StatCard("Kategorija", orgAnalytics.categories.size.toString(), R.color.purple_600)
+        ))
+
+        setupOrgBarChart(orgAnalytics)
+        setupOrgPieChart(orgAnalytics)
         updateChartTitles("organizacija")
     }
 
@@ -410,14 +607,16 @@ class StatisticsActivity : AppCompatActivity() {
             orgSelectorContainer = null
         }
 
+        val systemAnalytics = generateSystemAnalytics()
+
         createStatsCards(listOf(
             StatCard("Ukupno sati", systemAnalytics.totalHours.toString(), R.color.purple_600),
             StatCard("Volontera", systemAnalytics.totalVolunteers.toString(), R.color.blue_600),
             StatCard("Organizacija", systemAnalytics.totalOrganizations.toString(), R.color.green_600)
         ))
 
-        setupSystemBarChart()
-        setupSystemPieChart()
+        setupSystemBarChart(systemAnalytics)
+        setupSystemPieChart(systemAnalytics)
         updateChartTitles("sustav")
     }
 
@@ -590,7 +789,7 @@ class StatisticsActivity : AppCompatActivity() {
         pieChart.invalidate()
     }
 
-    private fun setupSystemBarChart() {
+    private fun setupSystemBarChart(systemAnalytics: SystemAnalytics) {
         val entries = systemAnalytics.categories.entries.mapIndexed { index, (_, data) ->
             BarEntry(index.toFloat(), data.hours.toFloat())
         }
@@ -624,7 +823,7 @@ class StatisticsActivity : AppCompatActivity() {
         barChart.invalidate()
     }
 
-    private fun setupSystemPieChart() {
+    private fun setupSystemPieChart(systemAnalytics: SystemAnalytics) {
         val entries = systemAnalytics.categories.map { (category, data) ->
             PieEntry(data.volunteers.toFloat(), category)
         }
