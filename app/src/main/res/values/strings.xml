@@ -7,12 +7,12 @@
     <string name="sign_in">PRIJAVI SE</string>
     <string name="sign_up">REGISTRIRAJ SE</string>
 
-    <string name="sign_up_description_text">Unesi svoje ime, e-mail adresu i lozinku kako bi se registrirao.</string>
-    <string name="name">Ime</string>
+    <string name="sign_up_description_text">Unesi svoje ime i prezime, e-mail adresu i lozinku kako bi se registrirao.</string>
+    <string name="name">Ime i Prezime</string>
     <string name="password">Lozinka</string>
     <string name="email">Email</string>
 
-    <string name="sign_in_description_text">Unesi svoje ime, e-mail adresu i lozinku kako bi se prijavio.</string>
+    <string name="sign_in_description_text">Unesi svoju e-mail adresu i lozinku kako bi se prijavio.</string>
 
     <string name="please_click_back_again_to_exit">Molimo pritisni natrag još jednom za izlaz iz aplikacije.</string>
     <string name="please_wait">Molimo pričekaj...</string>
