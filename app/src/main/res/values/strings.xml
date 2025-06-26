@@ -48,7 +48,7 @@
     <string name="select_color">Izaberi Boju</string>
     <string name="select_members">Odaberi Korisnike</string>
 
-    <string name="typeofwork">Izaberi Vrstu Posla</string>
+    <string name="typeofwork">Vrsta Posla</string>
     <string name="select_typeofwork">Odaberi Vrstu Posla</string>
 
     <string name="due_date">Datum</string>

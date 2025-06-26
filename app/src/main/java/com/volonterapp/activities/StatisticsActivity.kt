@@ -699,7 +699,7 @@ class StatisticsActivity : AppCompatActivity() {
             return
         }
 
-        val dataSet = PieDataSet(entries, "Volonteri po kategorijama")
+        val dataSet = PieDataSet(entries, "")
         dataSet.colors = entries.indices.map { index ->
             val hue = (index * 360f / entries.size) % 360f
             Color.HSVToColor(floatArrayOf(hue, 0.7f, 0.9f))
@@ -779,7 +779,7 @@ class StatisticsActivity : AppCompatActivity() {
             return
         }
 
-        val dataSet = PieDataSet(entries, "Volonteri po kategorijama")
+        val dataSet = PieDataSet(entries, "")
         dataSet.colors = entries.indices.map { index ->
             val hue = (index * 360f / entries.size) % 360f
             Color.HSVToColor(floatArrayOf(hue, 0.7f, 0.9f))
@@ -853,7 +853,7 @@ class StatisticsActivity : AppCompatActivity() {
         }
 
 
-        val dataSet = PieDataSet(entries, "Volonteri po kategorijama")
+        val dataSet = PieDataSet(entries, "")
         dataSet.colors = entries.indices.map { index ->
             val hue = (index * 360f / entries.size) % 360f
             Color.HSVToColor(floatArrayOf(hue, 0.7f, 0.9f))
