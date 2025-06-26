@@ -54,7 +54,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     private fun sendRegistrationToServer(token: String?) {
         val sharedPreferences =
-            this.getSharedPreferences(Constants.PROGEMANAG_PREFERENCES, Context.MODE_PRIVATE)
+            this.getSharedPreferences(Constants.VOLONTERAPP_PREFERENCES, Context.MODE_PRIVATE)
         val editor: SharedPreferences.Editor = sharedPreferences.edit()
         editor.putString(Constants.FCM_TOKEN, token)
         editor.apply()

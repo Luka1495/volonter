@@ -34,7 +34,7 @@ object Constants {
     const val READ_STORAGE_PERMISSION_CODE = 1
     const val PICK_IMAGE_REQUEST_CODE = 2
 
-    const val PROGEMANAG_PREFERENCES: String = "ProjemanagPrefs"
+    const val VOLONTERAPP_PREFERENCES: String = "VolonterappPrefs"
     const val FCM_TOKEN:String = "fcmToken"
     const val FCM_TOKEN_UPDATED:String = "fcmTokenUpdated"
 
