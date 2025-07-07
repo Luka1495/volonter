@@ -113,18 +113,6 @@ class TaskListActivity : BaseActivity() {
     }
 
 
-    fun updateTaskList(position: Int, listName: String, model: Task) {
-
-        val task = Task(listName, model.createdBy)
-
-        mBoardDetails.taskList[position] = task
-        mBoardDetails.taskList.removeAt(mBoardDetails.taskList.size - 1)
-
-        showProgressDialog(resources.getString(R.string.please_wait))
-        FirestoreClass().addUpdateTaskList(this@TaskListActivity, mBoardDetails)
-    }
-
-
     fun deleteTaskList(position: Int) {
 
         mBoardDetails.taskList.removeAt(position)

@@ -21,13 +21,12 @@ class SplashActivity : AppCompatActivity() {
 
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            window.insetsController?.hide(WindowInsets.Type.statusBars())
+            window.insetsController?.let { controller ->
+                controller.hide(WindowInsets.Type.statusBars())
+            }
         } else {
             @Suppress("DEPRECATION")
-            window.setFlags(
-                WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN
-            )
+            window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
         }
 
         val typeface: Typeface =
@@ -35,14 +34,13 @@ class SplashActivity : AppCompatActivity() {
         tv_app_name.typeface = typeface
 
         Handler(Looper.getMainLooper()).postDelayed({
-
-
             val currentUserID = FirestoreClass().getCurrentUserID()
 
-            if (currentUserID.isNotEmpty()) {
-                startActivity(Intent(this@SplashActivity, MainActivity::class.java))
-            } else {
-                startActivity(Intent(this@SplashActivity, IntroActivity::class.java))
+            val nextActivity = if (currentUserID.isEmpty())
+                IntroActivity::class.java else MainActivity::class.java
+
+            Intent(this@SplashActivity, nextActivity).also { intent ->
+                startActivity(intent)
             }
             finish()
         }, 2500)

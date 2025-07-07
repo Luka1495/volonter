@@ -51,22 +51,21 @@ class SignInActivity : BaseActivity() {
 
 
     private fun signInRegisteredUser() {
-        val email: String = et_email.text.toString().trim { it <= ' ' }
-        val password: String = et_password.text.toString().trim { it <= ' ' }
+        val userEmail = et_email.text.toString().trim()
+        val userPassword = et_password.text.toString().trim()
 
-        if (validateForm(email, password)) {
+        if (validateForm(userEmail, userPassword)) {
             showProgressDialog(resources.getString(R.string.please_wait))
 
-            FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
+            FirebaseAuth.getInstance()
+                .signInWithEmailAndPassword(userEmail, userPassword)
+                .addOnCompleteListener { authTask ->
+                    authTask.result?.user?.let {
                         FirestoreClass().loadUserData(this@SignInActivity)
-                    } else {
-                        Toast.makeText(
-                            this@SignInActivity,
-                            task.exception!!.message,
-                            Toast.LENGTH_LONG
-                        ).show()
+                    } ?: run {
+                        authTask.exception?.message?.let { errorMessage ->
+                            Toast.makeText(this@SignInActivity, errorMessage, Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
         }

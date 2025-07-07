@@ -145,43 +145,32 @@ class MyProfileActivity : BaseActivity() {
 
 
     private fun uploadUserImage() {
-
         showProgressDialog(resources.getString(R.string.please_wait))
 
-        if (mSelectedImageFileUri != null) {
+        mSelectedImageFileUri?.let { imageUri ->
+            val timestamp = System.currentTimeMillis()
+            val fileExtension = Constants.getFileExtension(this@MyProfileActivity, imageUri)
+            val imagePath = "USER_PROFILE_$timestamp.$fileExtension"
 
-            val sRef: StorageReference = FirebaseStorage.getInstance().reference.child(
-                    "USER_IMAGE" + System.currentTimeMillis() + "."
-                            + Constants.getFileExtension(this@MyProfileActivity, mSelectedImageFileUri)
-            )
-
-            sRef.putFile(mSelectedImageFileUri!!)
-                    .addOnSuccessListener { taskSnapshot ->
-                        Log.e(
-                                "Firebase Image URL",
-                                taskSnapshot.metadata!!.reference!!.downloadUrl.toString()
-                        )
-
-                        taskSnapshot.metadata!!.reference!!.downloadUrl
-                                .addOnSuccessListener { uri ->
-                                    Log.e("Downloadable Image URL", uri.toString())
-
-                                    mProfileImageURL = uri.toString()
-
-                                    updateUserProfileData()
-                                }
+            FirebaseStorage.getInstance().reference
+                .child(imagePath)
+                .putFile(imageUri)
+                .addOnSuccessListener { uploadTask ->
+                    uploadTask.metadata?.reference?.downloadUrl
+                        ?.addOnSuccessListener { downloadUri ->
+                            mProfileImageURL = downloadUri.toString()
+                            updateUserProfileData()
+                        }
+                }
+                .addOnFailureListener { error ->
+                    error.message?.let { errorMessage ->
+                        Toast.makeText(this@MyProfileActivity, errorMessage, Toast.LENGTH_LONG).show()
                     }
-                    .addOnFailureListener { exception ->
-                        Toast.makeText(
-                                this@MyProfileActivity,
-                                exception.message,
-                                Toast.LENGTH_LONG
-                        ).show()
-
-                        hideProgressDialog()
-                    }
+                    hideProgressDialog()
+                }
         }
     }
+
 
 
     private fun updateUserProfileData() {

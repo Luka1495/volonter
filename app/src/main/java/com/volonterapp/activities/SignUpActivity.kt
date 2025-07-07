@@ -54,34 +54,30 @@ class SignUpActivity : BaseActivity() {
 
 
     private fun registerUser() {
-        val name: String = et_name.text.toString().trim { it <= ' ' }
-        val email: String = et_email.text.toString().trim { it <= ' ' }
-        val password: String = et_password.text.toString().trim { it <= ' ' }
+        val userName = et_name.text.toString().trim()
+        val userEmail = et_email.text.toString().trim()
+        val userPassword = et_password.text.toString().trim()
 
-        if (validateForm(name, email, password)) {
+        if (validateForm(userName, userEmail, userPassword)) {
             showProgressDialog(resources.getString(R.string.please_wait))
-            FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(
-                    OnCompleteListener<AuthResult> { task ->
 
-                        if (task.isSuccessful) {
-
-                            val firebaseUser: FirebaseUser = task.result!!.user!!
-                            val registeredEmail = firebaseUser.email!!
-
-                            val user = User(
-                                firebaseUser.uid, name, registeredEmail
-                            )
-
-                            FirestoreClass().registerUser(this@SignUpActivity, user)
-                        } else {
-                            Toast.makeText(
-                                this@SignUpActivity,
-                                task.exception!!.message,
-                                Toast.LENGTH_SHORT
-                            ).show()
+            FirebaseAuth.getInstance()
+                .createUserWithEmailAndPassword(userEmail, userPassword)
+                .addOnCompleteListener { authTask ->
+                    authTask.result?.user?.let { firebaseUser ->
+                        User(
+                            id = firebaseUser.uid,
+                            name = userName,
+                            email = firebaseUser.email ?: userEmail
+                        ).apply {
+                            FirestoreClass().registerUser(this@SignUpActivity, this)
                         }
-                    })
+                    } ?: run {
+                        authTask.exception?.message?.let { errorMessage ->
+                            Toast.makeText(this@SignUpActivity, errorMessage, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
         }
     }
 

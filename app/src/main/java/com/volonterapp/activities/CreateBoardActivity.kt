@@ -128,52 +128,44 @@ class CreateBoardActivity : BaseActivity() {
     private fun uploadBoardImage() {
         showProgressDialog(resources.getString(R.string.please_wait))
 
-        val sRef: StorageReference = FirebaseStorage.getInstance().reference.child(
-                "BOARD_IMAGE" + System.currentTimeMillis() + "."
-                        + Constants.getFileExtension(this@CreateBoardActivity, mSelectedImageFileUri)
-        )
+        mSelectedImageFileUri?.let { imageUri ->
+            val timestamp = System.currentTimeMillis()
+            val fileExtension = Constants.getFileExtension(this@CreateBoardActivity, imageUri)
+            val imagePath = "BOARD_COVER_$timestamp.$fileExtension"
 
-        sRef.putFile(mSelectedImageFileUri!!)
-                .addOnSuccessListener { taskSnapshot ->
-                    Log.e(
-                            "Firebase Image URL",
-                            taskSnapshot.metadata!!.reference!!.downloadUrl.toString()
-                    )
-
-                    taskSnapshot.metadata!!.reference!!.downloadUrl
-                            .addOnSuccessListener { uri ->
-                                Log.e("Downloadable Image URL", uri.toString())
-
-                                mBoardImageURL = uri.toString()
-
-                                createBoard()
-                            }
+            FirebaseStorage.getInstance().reference
+                .child(imagePath)
+                .putFile(imageUri)
+                .addOnSuccessListener { uploadResult ->
+                    uploadResult.metadata?.reference?.downloadUrl
+                        ?.addOnSuccessListener { downloadUri ->
+                            mBoardImageURL = downloadUri.toString()
+                            createBoard()
+                        }
                 }
-                .addOnFailureListener { exception ->
-                    Toast.makeText(
-                            this@CreateBoardActivity,
-                            exception.message,
-                            Toast.LENGTH_LONG
-                    ).show()
-
+                .addOnFailureListener { error ->
+                    error.message?.let { errorMessage ->
+                        Toast.makeText(this@CreateBoardActivity, errorMessage, Toast.LENGTH_LONG).show()
+                    }
                     hideProgressDialog()
                 }
+        }
     }
 
 
     private fun createBoard() {
+        val boardMembers = mutableListOf<String>().apply {
+            add(getCurrentUserID())
+        }
 
-        val assignedUsersArrayList: ArrayList<String> = ArrayList()
-        assignedUsersArrayList.add(getCurrentUserID()) // adding the current user id.
-
-        val board = Board(
-                et_board_name.text.toString(),
-                mBoardImageURL,
-                mUserName,
-                assignedUsersArrayList
+        val newBoard = Board(
+            name = et_board_name.text.toString(),
+            image = mBoardImageURL,
+            createdBy = mUserName,
+            assignedTo = ArrayList(boardMembers)
         )
 
-        FirestoreClass().createBoard(this@CreateBoardActivity, board)
+        FirestoreClass().createBoard(this@CreateBoardActivity, newBoard)
     }
 
 

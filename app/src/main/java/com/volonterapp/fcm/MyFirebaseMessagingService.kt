@@ -23,25 +23,25 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
+        Log.d(TAG, "Poruka od: ${remoteMessage.from}")
 
-        Log.d(TAG, "From: ${remoteMessage.from}")
+        when (remoteMessage.data.isNotEmpty()) {
+            true -> {
+                Log.i(TAG, "Sadržaj poruke: ${remoteMessage.data}")
 
-
-        remoteMessage.data.isNotEmpty().let {
-            Log.i(TAG, "Message data payload: " + remoteMessage.data)
-
-            val title = remoteMessage.data[Constants.FCM_KEY_TITLE]!!
-            val message = remoteMessage.data[Constants.FCM_KEY_MESSAGE]!!
-
-            sendNotification(title, message)
+                remoteMessage.data[Constants.FCM_KEY_TITLE]?.let { notificationTitle ->
+                    remoteMessage.data[Constants.FCM_KEY_MESSAGE]?.let { notificationMessage ->
+                        sendNotification(notificationTitle, notificationMessage)
+                    }
+                }
+            }
         }
 
-        remoteMessage.notification?.let {
-            Log.d(TAG, "Message Notification Body: ${it.body}")
+        remoteMessage.notification?.body?.also { notificationBody ->
+            Log.d(TAG, "Tijelo notifikacije: $notificationBody")
         }
-
-
     }
+
 
 
     override fun onNewToken(token: String) {
@@ -60,46 +60,32 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         editor.apply()
     }
 
-    private fun sendNotification(title: String, message: String) {
-
-
-        val intent: Intent = if (FirestoreClass().getCurrentUserID().isNotEmpty()) {
-            Intent(this, MainActivity::class.java)
-        } else {
-            Intent(this, SignInActivity::class.java)
-        }
-        intent.flags = (Intent.FLAG_ACTIVITY_NEW_TASK
-                or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0 /* Request code */, intent,
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val channelId = this.resources.getString(R.string.default_notification_channel_id)
-        val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-        val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_stat_ic_notification)
-            .setContentTitle(title)
-            .setContentText(message)
-            .setAutoCancel(true)
-            .setSound(defaultSoundUri)
-            .setContentIntent(pendingIntent)
-
-        val notificationManager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Channel VolonterApp title",
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
-            notificationManager.createNotificationChannel(channel)
+    private fun sendNotification(notificationTitle: String, notificationMessage: String) {
+        val targetIntent = when (FirestoreClass().getCurrentUserID().isEmpty()) {
+            true -> Intent(this, SignInActivity::class.java)
+            false -> Intent(this, MainActivity::class.java)
+        }.apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
-        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build())
+        val pendingAction = PendingIntent.getActivity(this, 0, targetIntent,
+            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE)
+        val channelIdentifier = resources.getString(R.string.default_notification_channel_id)
+        val notificationSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+
+        NotificationCompat.Builder(this, channelIdentifier).apply {
+            setSmallIcon(R.drawable.ic_stat_ic_notification)
+            setContentTitle(notificationTitle)
+            setContentText(notificationMessage)
+            setAutoCancel(true)
+            setSound(notificationSound)
+            setContentIntent(pendingAction)
+        }.build().also { notification ->
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+                .notify(0, notification)
+        }
     }
 
     companion object {

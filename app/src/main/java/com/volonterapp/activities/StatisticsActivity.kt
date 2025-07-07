@@ -644,40 +644,48 @@ class StatisticsActivity : AppCompatActivity() {
     }
 
     private fun setupBarChart(user: UserAnalytics) {
-        val entries = user.organizations.mapIndexed { index, org ->
-            BarEntry(index.toFloat(), org.hours.toFloat())
+        barChart.apply {
+            data = buildBarData(user)
+            configureChartAppearance()
+            configureXAxis(user)
+            animateY(1_000)
+            invalidate()
         }
-
-        val dataSet = BarDataSet(entries, "Sati rada")
-        dataSet.color = ContextCompat.getColor(this, R.color.blue_600)
-        dataSet.valueTextSize = 12f
-        dataSet.valueFormatter = IntegerValueFormatter()
-
-        val data = BarData(dataSet)
-        barChart.data = data
-
-        barChart.description.isEnabled = false
-        barChart.legend.isEnabled = false
-        barChart.animateY(1000)
-
-        val xAxis = barChart.xAxis
-        val shortNames = user.organizations.map {
-            if (it.name.length > 10) it.name.take(8) + "..." else it.name
-        }
-        xAxis.valueFormatter = IndexAxisValueFormatter(shortNames)
-        xAxis.position = XAxis.XAxisPosition.BOTTOM
-        xAxis.granularity = 1f
-        xAxis.setDrawGridLines(false)
-        xAxis.textSize = 10f
-        xAxis.labelRotationAngle = -45f
-        xAxis.setLabelCount(user.organizations.size, false)
-
-        barChart.setFitBars(true)
-        barChart.setScaleEnabled(true)
-        barChart.isDragEnabled = true
-
-        barChart.invalidate()
     }
+
+    private fun buildBarData(user: UserAnalytics): BarData {
+        val entries = user.organizations.mapIndexed { i, org -> BarEntry(i.toFloat(), org.hours.toFloat()) }
+        val set = BarDataSet(entries, getString(R.string.work_hours)).also {
+            it.color = ContextCompat.getColor(this, R.color.blue_600)
+            it.valueTextSize = 12f
+            it.valueFormatter = IntegerValueFormatter()
+        }
+        return BarData(set)
+    }
+
+    private fun BarChart.configureChartAppearance() {
+        description.isEnabled = false
+        legend.isEnabled = false
+        setFitBars(true)
+        setScaleEnabled(true)
+        isDragEnabled = true
+    }
+
+    private fun BarChart.configureXAxis(user: UserAnalytics) {
+        val labels = user.organizations.map { o ->
+            if (o.name.length > 10) o.name.take(8) + "…" else o.name
+        }
+        xAxis.apply {
+            valueFormatter = IndexAxisValueFormatter(labels)
+            position = XAxis.XAxisPosition.BOTTOM
+            setDrawGridLines(false)
+            granularity = 1f
+            textSize = 10f
+            labelRotationAngle = -45f
+            setLabelCount(labels.size, false)
+        }
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.N)
     private fun setupPieChart(user: UserAnalytics) {

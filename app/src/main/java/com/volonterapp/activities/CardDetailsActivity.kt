@@ -79,7 +79,7 @@ class CardDetailsActivity : BaseActivity() {
 
         tv_select_due_date.setOnClickListener {
 
-            showDataPicker()
+            showDatePicker()
         }
 
         mSelectedWorkHours = mBoardDetails.taskList[mTaskListPosition].cards[mCardPosition].workHours
@@ -359,40 +359,38 @@ class CardDetailsActivity : BaseActivity() {
     }
 
 
-    private fun showDataPicker() {
+    private fun showDatePicker() {
+        Calendar.getInstance().let { calendar ->
+            val currentYear = calendar.get(Calendar.YEAR)
+            val currentMonth = calendar.get(Calendar.MONTH)
+            val currentDay = calendar.get(Calendar.DAY_OF_MONTH)
 
-        val c = Calendar.getInstance()
-        val year =
-            c.get(Calendar.YEAR)
-        val month = c.get(Calendar.MONTH)
-        val day = c.get(Calendar.DAY_OF_MONTH)
-
-
-        val dpd = DatePickerDialog(
-            this,
-            DatePickerDialog.OnDateSetListener { view, year, monthOfYear, dayOfMonth ->
-
-                val sDayOfMonth = if (dayOfMonth < 10) "0$dayOfMonth" else "$dayOfMonth"
-                val sMonthOfYear =
-                    if ((monthOfYear + 1) < 10) "0${monthOfYear + 1}" else "${monthOfYear + 1}"
-
-                val selectedDate = "$sDayOfMonth/$sMonthOfYear/$year"
-                tv_select_due_date.text = selectedDate
-
-
-                val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH)
-
-                val theDate = sdf.parse(selectedDate)
-
-
-                mSelectedDueDateMilliSeconds = theDate!!.time
-            },
-            year,
-            month,
-            day
-        )
-        dpd.show()
+            DatePickerDialog(
+                this,
+                { _, selectedYear, selectedMonth, selectedDay ->
+                    handleDateSelection(selectedDay, selectedMonth, selectedYear)
+                },
+                currentYear,
+                currentMonth,
+                currentDay
+            ).apply {
+                show()
+            }
+        }
     }
+
+    private fun handleDateSelection(day: Int, month: Int, year: Int) {
+        val formattedDay = String.format("%02d", day)
+        val formattedMonth = String.format("%02d", month + 1)
+        val dateString = "$formattedDay/$formattedMonth/$year"
+
+        tv_select_due_date.text = dateString
+
+        SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH).parse(dateString)?.let { parsedDate ->
+            mSelectedDueDateMilliSeconds = parsedDate.time
+        }
+    }
+
     private fun showWorkHoursInputDialog() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Unesite broj sati")

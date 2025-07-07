@@ -182,33 +182,38 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
 
 
     fun populateBoardsListToUI(boardsList: ArrayList<Board>) {
-
         hideProgressDialog()
 
-        if (boardsList.size > 0) {
-
-            rv_boards_list.visibility = View.VISIBLE
-            tv_no_boards_available.visibility = View.GONE
-
-            rv_boards_list.layoutManager = LinearLayoutManager(this@MainActivity)
-            rv_boards_list.setHasFixedSize(true)
-
-            val adapter = BoardItemsAdapter(this@MainActivity, boardsList)
-            rv_boards_list.adapter = adapter
-
-            adapter.setOnClickListener(object :
-                BoardItemsAdapter.OnClickListener {
-                override fun onClick(position: Int, model: Board) {
-                    val intent = Intent(this@MainActivity, TaskListActivity::class.java)
-                    intent.putExtra(Constants.DOCUMENT_ID, model.documentId)
-                    startActivity(intent)
+        when (boardsList.isEmpty()) {
+            true -> {
+                rv_boards_list.visibility = View.GONE
+                tv_no_boards_available.visibility = View.VISIBLE
+            }
+            false -> {
+                tv_no_boards_available.visibility = View.GONE
+                rv_boards_list.apply {
+                    visibility = View.VISIBLE
+                    layoutManager = LinearLayoutManager(this@MainActivity)
+                    setHasFixedSize(true)
+                    adapter = BoardItemsAdapter(this@MainActivity, boardsList).also { boardAdapter ->
+                        boardAdapter.setOnClickListener(object : BoardItemsAdapter.OnClickListener {
+                            override fun onClick(position: Int, model: Board) {
+                                navigateToTaskList(model.documentId)
+                            }
+                        })
+                    }
                 }
-            })
-        } else {
-            rv_boards_list.visibility = View.GONE
-            tv_no_boards_available.visibility = View.VISIBLE
+            }
         }
     }
+
+    private fun navigateToTaskList(documentId: String) {
+        Intent(this@MainActivity, TaskListActivity::class.java).apply {
+            putExtra(Constants.DOCUMENT_ID, documentId)
+            startActivity(this)
+        }
+    }
+
 
 
     fun tokenUpdateSuccess() {
